@@ -1,1 +1,132 @@
-<h1>My Dashboard</h1>
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My AI Camera Dashboard</title>
+    <!-- Telegram Mini App Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #1a202c;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card {
+            background-color: #2d3748;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 15px;
+            color: #0088cc;
+        }
+        .user-info {
+            background: #1a202c;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 14px;
+        }
+        .user-info p {
+            margin: 5px 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #cbd5e0;
+        }
+        input[type="file"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #4a5568;
+            background-color: #1a202c;
+            color: white;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #006699;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>AI Camera Dashboard</h2>
+        
+        <!-- ইউজার ভেরিফিকেশন সেকশন -->
+        <div class="user-info" id="userInfo">
+            <p><strong>আইডি:</strong> <span id="userId">Loding...</span></p>
+            <p><strong>নাম:</strong> <span id="userName">Loding...</span></p>
+        </div>
+
+        <!-- ফটো আপলোড ফর্ম -->
+        <div class="form-group">
+            <label for="photo">ছবি নির্বাচন করুন:</label>
+            <input type="file" id="photo" accept="image/*">
+        </div>
+
+        <button onclick="submitData()">সাবমিট করুন</button>
+    </div>
+
+    <script>
+        // টেলিগ্রাম ওয়েব অ্যাপ ইনিশিয়ালাইজেশন
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // পুরো স্ক্রিন জুড়ে অ্যাপ ওপেন করবে
+
+        // ইউজার তথ্য প্রদর্শন
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            const user = tg.initDataUnsafe.user;
+            document.getElementById('userId').innerText = user.id;
+            document.getElementById('userName').innerText = user.first_name + ' ' + (user.last_name || '');
+        } else {
+            document.getElementById('userId').innerText = "Guest / Browser Mode";
+            document.getElementById('userName').innerText = "অজানা ব্যবহারকারী";
+        }
+
+        // ফর্ম সাবমিট ফাংশন
+        function submitData() {
+            const fileInput = document.getElementById('photo');
+            if (fileInput.files.length === 0) {
+                tg.showAlert("অনুগ্রহ করে একটি ছবি নির্বাচন করুন!");
+                return;
+            }
+
+            tg.showAlert("আপনার ছবি সফলভাবে প্রক্রিয়া করা হয়েছে!");
+        }
+    </script>
+</body>
+</html>
+
