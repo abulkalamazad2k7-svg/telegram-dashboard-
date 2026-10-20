@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My AI Camera Dashboard</title>
+    <title>AI Camera Registration & Login</title>
     <!-- Telegram Mini App Script -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -22,33 +22,21 @@
             min-height: 100vh;
             padding: 20px;
         }
-        .card {
+        .container {
             background-color: #2d3748;
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.3);
             width: 100%;
             max-width: 400px;
-            text-align: center;
         }
         h2 {
-            margin-bottom: 15px;
-            color: #0088cc;
-        }
-        .user-info {
-            background: #1a202c;
-            padding: 15px;
-            border-radius: 8px;
+            text-align: center;
             margin-bottom: 20px;
-            text-align: left;
-            font-size: 14px;
-        }
-        .user-info p {
-            margin: 5px 0;
+            color: #0088cc;
         }
         .form-group {
             margin-bottom: 15px;
-            text-align: left;
         }
         label {
             display: block;
@@ -56,7 +44,7 @@
             font-size: 13px;
             color: #cbd5e0;
         }
-        input[type="file"], input[type="text"] {
+        input[type="text"], input[type="tel"], input[type="password"] {
             width: 100%;
             padding: 10px;
             border-radius: 6px;
@@ -64,6 +52,7 @@
             background-color: #1a202c;
             color: white;
             outline: none;
+            font-size: 14px;
         }
         button {
             width: 100%;
@@ -74,59 +63,138 @@
             border-radius: 6px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.3s;
+            margin-top: 10px;
+            font-size: 15px;
         }
         button:hover {
             background-color: #006699;
+        }
+        .toggle-link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #a0aec0;
+        }
+        .toggle-link a {
+            color: #0088cc;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>AI Camera Dashboard</h2>
-        
-        <!-- ইউজার ভেরিফিকেশন সেকশন -->
-        <div class="user-info" id="userInfo">
-            <p><strong>আইডি:</strong> <span id="userId">Loding...</span></p>
-            <p><strong>নাম:</strong> <span id="userName">Loding...</span></p>
+    <div class="container">
+        <!-- রেজিস্ট্রেশন ফর্ম -->
+        <div id="registerForm">
+            <h2>নতুন অ্যাকাউন্ট তৈরি করুন</h2>
+            <div class="form-group">
+                <label for="regName">আপনার নাম:</label>
+                <input type="text" id="regName" placeholder="পুরো নাম লিখুন">
+            </div>
+            <div class="form-group">
+                <label for="regPhone">মোবাইল নম্বর:</label>
+                <input type="tel" id="regPhone" placeholder="017XXXXXXXX">
+            </div>
+            <div class="form-group">
+                <label for="regPassword">পাসওয়ার্ড সেট করুন:</label>
+                <input type="password" id="regPassword" placeholder="পাসওয়ার্ড দিন">
+            </div>
+            <button onclick="handleRegister()">অ্যাকাউন্ট খুলুন</button>
+            <div class="toggle-link">
+                আগে থেকেই অ্যাকাউন্ট আছে? <a onclick="toggleForm('login')">লগইন করুন</a>
+            </div>
         </div>
 
-        <!-- ফটো আপলোড ফর্ম -->
-        <div class="form-group">
-            <label for="photo">ছবি নির্বাচন করুন:</label>
-            <input type="file" id="photo" accept="image/*">
+        <!-- লগইন ফর্ম -->
+        <div id="loginForm" class="hidden">
+            <h2>লগইন করুন</h2>
+            <div class="form-group">
+                <label for="loginPhone">মোবাইল নম্বর:</label>
+                <input type="tel" id="loginPhone" placeholder="017XXXXXXXX">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">পাসওয়ার্ড:</label>
+                <input type="password" id="loginPassword" placeholder="পাসওয়ার্ড দিন">
+            </div>
+            <button onclick="handleLogin()">লগইন</button>
+            <div class="toggle-link">
+                নতুন অ্যাকাউন্ট দরকার? <a onclick="toggleForm('register')">রেজিস্ট্রেশন করুন</a>
+            </div>
         </div>
 
-        <button onclick="submitData()">সাবমিট করুন</button>
+        <!-- ড্যাশবোর্ড সেকশন -->
+        <div id="dashboardSection" class="hidden">
+            <h2>AI Camera Dashboard</h2>
+            <p style="text-align: center; margin-bottom: 15px; color: #68d391;">
+                স্বাগতম, <span id="userDisplayName"></span>!
+            </p>
+            <button onclick="handleLogout()" style="background-color: #e53e3e;">লগআউট</button>
+        </div>
     </div>
 
     <script>
-        // টেলিগ্রাম ওয়েব অ্যাপ ইনিশিয়ালাইজেশন
         const tg = window.Telegram.WebApp;
-        tg.expand(); // পুরো স্ক্রিন জুড়ে অ্যাপ ওপেন করবে
+        tg.expand();
 
-        // ইউজার তথ্য প্রদর্শন
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            const user = tg.initDataUnsafe.user;
-            document.getElementById('userId').innerText = user.id;
-            document.getElementById('userName').innerText = user.first_name + ' ' + (user.last_name || '');
-        } else {
-            document.getElementById('userId').innerText = "Guest / Browser Mode";
-            document.getElementById('userName').innerText = "অজানা ব্যবহারকারী";
+        // ফর্ম পরিবর্তন করার ফাংশন
+        function toggleForm(formType) {
+            if (formType === 'login') {
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('loginForm').classList.remove('hidden');
+            } else {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+            }
         }
 
-        // ফর্ম সাবমিট ফাংশন
-        function submitData() {
-            const fileInput = document.getElementById('photo');
-            if (fileInput.files.length === 0) {
-                tg.showAlert("অনুগ্রহ করে একটি ছবি নির্বাচন করুন!");
+        // রেজিস্ট্রেশন প্রসেস (ডেমো ফ্রন্টএন্ড লজিক)
+        function handleRegister() {
+            const name = document.getElementById('regName').value;
+            const phone = document.getElementById('regPhone').value;
+            const password = document.getElementById('regPassword').value;
+
+            if (!name || !phone || !password) {
+                tg.showAlert("অনুগ্রহ করে সব ঘর পূরণ করুন!");
                 return;
             }
 
-            tg.showAlert("আপনার ছবি সফলভাবে প্রক্রিয়া করা হয়েছে!");
+            // স্থানীয় তথ্য সংরক্ষণ (ডেমো টেস্টের জন্য)
+            localStorage.setItem('userPhone', phone);
+            localStorage.setItem('userPassword', password);
+            localStorage.setItem('userName', name);
+
+            tg.showAlert("রেজিস্ট্রেশন সফল হয়েছে! এখন লগইন করুন।");
+            toggleForm('login');
+        }
+
+        // লগইন প্রসেস (ডেমো ফ্রন্টএন্ড লজিক)
+        function handleLogin() {
+            const phone = document.getElementById('loginPhone').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const savedPhone = localStorage.getItem('userPhone');
+            const savedPassword = localStorage.getItem('userPassword');
+            const savedName = localStorage.getItem('userName');
+
+            if (phone === savedPhone && password === savedPassword && phone !== null) {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.getElementById('userDisplayName').innerText = savedName;
+            } else {
+                tg.showAlert("মোবাইল নম্বর বা পাসওয়ার্ড ভুল হয়েছে!");
+            }
+        }
+
+        // লগআউট
+        function handleLogout() {
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
         }
     </script>
 </body>
 </html>
-
