@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Camera Registration & Login</title>
+    <title>AI Camera Scan Dashboard</title>
     <!-- Telegram Mini App Script -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -14,186 +14,197 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         body {
-            background-color: #1a202c;
+            background-color: #111827;
             color: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
+            padding: 15px;
         }
         .container {
-            background-color: #2d3748;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            background-color: #1f2937;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
+            text-align: center;
         }
         h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #0088cc;
+            font-size: 20px;
+            color: #38bdf8;
+            margin-bottom: 8px;
         }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
+        p.subtitle {
             font-size: 13px;
-            color: #cbd5e0;
+            color: #9ca3af;
+            margin-bottom: 20px;
         }
-        input[type="text"], input[type="tel"], input[type="password"] {
+        
+        /* ক্যামেরা উইন্ডো ও স্ক্যান এরিয়া */
+        .camera-box {
+            position: relative;
             width: 100%;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #4a5568;
-            background-color: #1a202c;
-            color: white;
-            outline: none;
-            font-size: 14px;
+            height: 280px;
+            background-color: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #374151;
+            margin-bottom: 20px;
+        }
+        video, canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* ফেস স্ক্যানার ফ্রেম ওভারলে */
+        .scan-overlay {
+            position: absolute;
+            width: 180px;
+            height: 220px;
+            border: 3px dashed #38bdf8;
+            border-radius: 50%;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+            display: none;
+        }
+
+        /* বাটন স্টাইল */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
         }
         button {
             width: 100%;
             padding: 12px;
-            background-color: #0088cc;
-            color: white;
             border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
+            border-radius: 8px;
             font-size: 15px;
-        }
-        button:hover {
-            background-color: #006699;
-        }
-        .toggle-link {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 13px;
-            color: #a0aec0;
-        }
-        .toggle-link a {
-            color: #0088cc;
-            text-decoration: none;
             font-weight: bold;
             cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-primary {
+            background-color: #0284c7;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0369a1;
+        }
+        .btn-success {
+            background-color: #16a34a;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #4b5563;
+            color: white;
         }
         .hidden {
-            display: none;
+            display: none !important;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- রেজিস্ট্রেশন ফর্ম -->
-        <div id="registerForm">
-            <h2>নতুন অ্যাকাউন্ট তৈরি করুন</h2>
-            <div class="form-group">
-                <label for="regName">আপনার নাম:</label>
-                <input type="text" id="regName" placeholder="পুরো নাম লিখুন">
-            </div>
-            <div class="form-group">
-                <label for="regPhone">মোবাইল নম্বর:</label>
-                <input type="tel" id="regPhone" placeholder="017XXXXXXXX">
-            </div>
-            <div class="form-group">
-                <label for="regPassword">পাসওয়ার্ড সেট করুন:</label>
-                <input type="password" id="regPassword" placeholder="পাসওয়ার্ড দিন">
-            </div>
-            <button onclick="handleRegister()">অ্যাকাউন্ট খুলুন</button>
-            <div class="toggle-link">
-                আগে থেকেই অ্যাকাউন্ট আছে? <a onclick="toggleForm('login')">লগইন করুন</a>
-            </div>
+        <h2>AI Face Scanner</h2>
+        <p class="subtitle">আপনার মুখমণ্ডল ফ্রেমে রেখে স্ক্যান করুন</p>
+
+        <!-- ক্যামেরা এবং প্রিভিউ উইন্ডো -->
+        <div class="camera-box">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas" class="hidden"></canvas>
+            <div id="overlay" class="scan-overlay"></div>
+            <p id="placeholderText" style="color: #6b7280; font-size: 14px;">ক্যামেরা চালু হয়নি</p>
         </div>
 
-        <!-- লগইন ফর্ম -->
-        <div id="loginForm" class="hidden">
-            <h2>লগইন করুন</h2>
-            <div class="form-group">
-                <label for="loginPhone">মোবাইল নম্বর:</label>
-                <input type="tel" id="loginPhone" placeholder="017XXXXXXXX">
-            </div>
-            <div class="form-group">
-                <label for="loginPassword">পাসওয়ার্ড:</label>
-                <input type="password" id="loginPassword" placeholder="পাসওয়ার্ড দিন">
-            </div>
-            <button onclick="handleLogin()">লগইন</button>
-            <div class="toggle-link">
-                নতুন অ্যাকাউন্ট দরকার? <a onclick="toggleForm('register')">রেজিস্ট্রেশন করুন</a>
-            </div>
-        </div>
-
-        <!-- ড্যাশবোর্ড সেকশন -->
-        <div id="dashboardSection" class="hidden">
-            <h2>AI Camera Dashboard</h2>
-            <p style="text-align: center; margin-bottom: 15px; color: #68d391;">
-                স্বাগতম, <span id="userDisplayName"></span>!
-            </p>
-            <button onclick="handleLogout()" style="background-color: #e53e3e;">লগআউট</button>
+        <!-- নেভিগেশন ও অ্যাকশন বাটন -->
+        <div class="btn-group">
+            <button id="startCamBtn" class="btn-primary" onclick="startCamera()">ক্যামেরা চালু করুন</button>
+            <button id="captureBtn" class="btn-success hidden" onclick="captureFace()">স্ক্যান ও ছবি ক্যাপচার</button>
+            <button id="retakeBtn" class="btn-secondary hidden" onclick="resetCamera()">পুনরায় স্ক্যান করুন</button>
+            <button id="submitBtn" class="btn-primary hidden" onclick="submitData()">ছবি সাবমিট করুন</button>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand();
+        tg.expand(); // টেলিগ্রাম মিনি অ্যাপ ফুলস্ক্রিন করা
 
-        // ফর্ম পরিবর্তন করার ফাংশন
-        function toggleForm(formType) {
-            if (formType === 'login') {
-                document.getElementById('registerForm').classList.add('hidden');
-                document.getElementById('loginForm').classList.remove('hidden');
-            } else {
-                document.getElementById('loginForm').classList.add('hidden');
-                document.getElementById('registerForm').classList.remove('hidden');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const overlay = document.getElementById('overlay');
+        const placeholderText = document.getElementById('placeholderText');
+
+        const startCamBtn = document.getElementById('startCamBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const retakeBtn = document.getElementById('retakeBtn');
+        const submitBtn = document.getElementById('submitBtn');
+
+        let stream = null;
+
+        // ক্যামেরা চালু করার ফাংশন
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+                    audio: false
+                });
+                video.srcObject = stream;
+                placeholderText.classList.add('hidden');
+                overlay.style.display = 'block';
+
+                startCamBtn.classList.add('hidden');
+                captureBtn.classList.remove('hidden');
+            } catch (err) {
+                tg.showAlert("ক্যামেরা অ্যাক্সেস করা সম্ভব হয়নি! পারমিশন দিন।");
+                console.error(err);
             }
         }
 
-        // রেজিস্ট্রেশন প্রসেস (ডেমো ফ্রন্টএন্ড লজিক)
-        function handleRegister() {
-            const name = document.getElementById('regName').value;
-            const phone = document.getElementById('regPhone').value;
-            const password = document.getElementById('regPassword').value;
+        // ফেস ক্যাপচার করার ফাংশন
+        function captureFace() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth || 320;
+            canvas.height = video.videoHeight || 240;
 
-            if (!name || !phone || !password) {
-                tg.showAlert("অনুগ্রহ করে সব ঘর পূরণ করুন!");
-                return;
+            // ক্যানভাসে ফ্রেম ড্র করা
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // ভিডিও বন্ধ করে ক্যানভাস (প্রিভিউ) দেখানো
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
             }
+            video.classList.add('hidden');
+            overlay.style.display = 'none';
+                canvas.classList.remove('hidden');
 
-            // স্থানীয় তথ্য সংরক্ষণ (ডেমো টেস্টের জন্য)
-            localStorage.setItem('userPhone', phone);
-            localStorage.setItem('userPassword', password);
-            localStorage.setItem('userName', name);
-
-            tg.showAlert("রেজিস্ট্রেশন সফল হয়েছে! এখন লগইন করুন।");
-            toggleForm('login');
+            captureBtn.classList.add('hidden');
+            retakeBtn.classList.remove('hidden');
+            submitBtn.classList.remove('hidden');
         }
 
-        // লগইন প্রসেস (ডেমো ফ্রন্টএন্ড লজিক)
-        function handleLogin() {
-            const phone = document.getElementById('loginPhone').value;
-            const password = document.getElementById('loginPassword').value;
-
-            const savedPhone = localStorage.getItem('userPhone');
-            const savedPassword = localStorage.getItem('userPassword');
-            const savedName = localStorage.getItem('userName');
-
-            if (phone === savedPhone && password === savedPassword && phone !== null) {
-                document.getElementById('loginForm').classList.add('hidden');
-                document.getElementById('dashboardSection').classList.remove('hidden');
-                document.getElementById('userDisplayName').innerText = savedName;
-            } else {
-                tg.showAlert("মোবাইল নম্বর বা পাসওয়ার্ড ভুল হয়েছে!");
-            }
+        // রিসেট বা পুনরায় স্ক্যান করার ফাংশন
+        function resetCamera() {
+            canvas.classList.add('hidden');
+            video.classList.remove('hidden');
+            retakeBtn.classList.add('hidden');
+            submitBtn.classList.add('hidden');
+            
+            startCamera();
         }
 
-        // লগআউট
-        function handleLogout() {
-            document.getElementById('dashboardSection').classList.add('hidden');
-            document.getElementById('loginForm').classList.remove('hidden');
+        // ডাটা বা ছবি সাবমিট করার ফাংশন
+        function submitData() {
+            // ছবির বেজ৬৪ ডাটা পেতে canvas.toDataURL('image/jpeg') ব্যবহার করা যায়
+            tg.showAlert("ছবি সফলভাবে প্রসেস করা হয়েছে!");
+            tg.close(); // সাবমিট শেষে মিনি অ্যাপ বন্ধ করতে চাইলে
         }
     </script>
 </body>
